@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 Professional Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-color: #eef2f5;
+            --card-bg: #ffffff;
+            --text-main: #2c3e50;
+            --text-muted: #7f8c8d;
+            --accent-color: #3498db;
+            --danger-color: #e74c3c;
+            --success-color: #2ecc71;
+            --warning-color: #f39c12;
+        }
+
+        body { 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0; 
+            padding: 10px 20px;
+            height: 100vh;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header { text-align: center; margin-bottom: 15px; }
+        .header h1 { margin-bottom: 5px; color: var(--text-main); font-size: 24px; }
+        .header p { margin-top: 0; color: var(--text-muted); font-size: 14px;}
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            max-width: 1200px;
+            margin: 0 auto 15px auto;
+            width: 100%;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            padding: 20px 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+        
+        .card h3 { margin: 0; color: var(--text-muted); font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+        .card h3 i { margin-right: 8px; font-size: 16px; }
+        .card .value { font-size: 32px; font-weight: bold; margin: 10px 0 0 0; color: var(--text-main); }
+        .card .unit { font-size: 16px; color: var(--text-muted); font-weight: normal; }
+
+        .bottom-row {
+            display: grid;
+            grid-template-columns: 300px 1fr; 
+            gap: 15px;
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            flex-grow: 1; 
+            padding-bottom: 20px;
+        }
+
+        .section-container {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .controls { justify-content: center; align-items: center; }
+
+        button { 
+            width: 80%; 
+            padding: 15px; 
+            font-size: 16px; 
+            font-weight: bold; 
+            border-radius: 8px; 
+            margin: 10px 0; 
+            cursor: pointer; 
+            transition: all 0.1s ease; 
+        }
+        
+        button i { margin-right: 8px; }
+        button:hover { opacity: 0.85; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+        button:active { transform: scale(0.95); box-shadow: inset 0 3px 5px rgba(0,0,0,0.2); }
+        .btn-on { background-color: var(--success-color); color: white; border: none; }
+        .btn-off { background-color: var(--danger-color); color: white; border: none; }
+        .sending { opacity: 0.6 !important; cursor: not-allowed; transform: none !important; }
+        
+        /* New styles for the chart header and filter dropdown */
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .chart-header h3 { margin: 0; color: var(--text-muted); text-transform: uppercase; font-size: 14px; }
+        
+        select {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #bdc3c7;
+            background-color: #fff;
+            color: var(--text-main);
+            font-weight: bold;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            flex-grow: 1; 
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fa-solid fa-server"></i> ESP32 Telemetry Dashboard</h1>
+        <p>Real-time MQTT Sensor & System Data</p>
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="card">
+            <h3><i class="fa-solid fa-microchip" style="color: #95a5a6;"></i> Device ID</h3>
+            <div class="value" id="val-device">--</div>
+        </div>
+        <div class="card">
+            <h3><i class="fa-solid fa-temperature-half" style="color: #e74c3c;"></i> Temperature</h3>
+            <div class="value"><span id="val-temp">--</span><span class="unit">°C</span></div>
+        </div>
+        <div class="card">
+            <h3><i class="fa-solid fa-droplet" style="color: #3498db;"></i> Humidity</h3>
+            <div class="value"><span id="val-hum">--</span><span class="unit">%</span></div>
+        </div>
+        <div class="card">
+            <h3><i class="fa-solid fa-wifi" style="color: #f39c12;"></i> WiFi Signal</h3>
+            <div class="value"><span id="val-rssi">--</span><span class="unit"> dBm</span></div>
+        </div>
+        <div class="card">
+            <h3><i class="fa-regular fa-clock" style="color: #2ecc71;"></i> Uptime</h3>
+            <div class="value" id="val-uptime" style="font-size: 26px;">--</div>
+        </div>
+    </div>
+
+    <div class="bottom-row">
+        <div class="section-container controls">
+            <h3 style="margin-top: 0; margin-bottom: 20px; color: var(--text-muted); text-transform: uppercase; font-size: 14px;">
+                <i class="fa-solid fa-sliders"></i> Remote Control
+            </h3>
+            <button class="btn-on" onclick="sendLedCommand('ON', this)">
+                <i class="fa-solid fa-power-off"></i> Turn LED ON
+            </button>
+            <button class="btn-off" onclick="sendLedCommand('OFF', this)">
+                <i class="fa-solid fa-power-off"></i> Turn LED OFF
+            </button>
+        </div>
+
+        <div class="section-container">
+            <div class="chart-header">
+                <h3><i class="fa-solid fa-chart-line"></i> Sensor Telemetry</h3>
+                <select id="timeFilter" onchange="updateDashboard()">
+                    <option value="live">Live (Last 30)</option>
+                    <option value="1h">Past 1 Hour</option>
+                    <option value="24h">Past 24 Hours</option>
+                </select>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="sensorChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let myChart;
+
+        async function sendLedCommand(cmd, btnElement) {
+            const originalHTML = btnElement.innerHTML;
+            btnElement.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
+            btnElement.classList.add("sending");
+            
+            try {
+                await fetch('/api/led', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ command: cmd })
+                });
+                btnElement.innerHTML = '<i class="fa-solid fa-check"></i> Done!';
+            } catch (error) {
+                btnElement.innerHTML = '<i class="fa-solid fa-xmark"></i> Failed!';
+            }
+            
+            setTimeout(() => {
+                btnElement.innerHTML = originalHTML;
+                btnElement.classList.remove("sending");
+            }, 1000);
+        }
+
+        function formatUptime(seconds) {
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = seconds % 60;
+            if (h > 0) return `${h}h ${m}m`;
+            if (m > 0) return `${m}m ${s}s`;
+            return `${s}s`;
+        }
+
+        async function updateDashboard() {
+            // Get the current value of the dropdown filter
+            const timeRange = document.getElementById('timeFilter').value;
+            
+            // Append the range to our AJAX fetch request
+            const response = await fetch(`/api/get_data?range=${timeRange}`);
+            const data = await response.json();
+            
+            if (data.length === 0) return;
+
+            // The metric cards always show the absolute latest reading
+            const latest = data[data.length - 1];
+            
+            document.getElementById('val-device').innerText = latest.device_id || '--';
+            document.getElementById('val-temp').innerText = latest.temperature !== null ? latest.temperature : '--';
+            document.getElementById('val-hum').innerText = latest.humidity !== null ? latest.humidity : '--';
+            document.getElementById('val-rssi').innerText = latest.rssi !== null ? latest.rssi : '--';
+            document.getElementById('val-uptime').innerText = latest.uptime ? formatUptime(latest.uptime) : '--';
+
+            // Process data for the chart
+            const labels = data.map(item => new Date(item.timestamp).toLocaleTimeString());
+            const temperatures = data.map(item => item.temperature);
+            const humidities = data.map(item => item.humidity);
+
+            if (myChart) {
+                myChart.data.labels = labels;
+                myChart.data.datasets[0].data = temperatures;
+                myChart.data.datasets[1].data = humidities;
+                myChart.update('none'); // Update without animation to prevent flashing during polling
+            } else {
+                const ctx = document.getElementById('sensorChart').getContext('2d');
+                myChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            { 
+                                label: 'Temperature (°C)', data: temperatures, 
+                                borderColor: '#e74c3c', backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                                fill: true, tension: 0.4, pointRadius: 2, yAxisID: 'y',
+                                spanGaps: true // <--- ADD THIS LINE
+                            },
+                            { 
+                                label: 'Humidity (%)', data: humidities, 
+                                borderColor: '#3498db', backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                                fill: true, tension: 0.4, pointRadius: 2, yAxisID: 'y1',
+                                spanGaps: true // <--- ADD THIS LINE
+                            }
+                        ]
+                    },
+                    options: { 
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: { duration: 0 }, // Turns off initial load animation for smoother AJAX
+                        plugins: { legend: { display: true, position: 'top' } },
+                        scales: { 
+                            y: { type: 'linear', display: true, position: 'left', title: { display: true, text: 'Temperature (°C)' } },
+                            y1: { type: 'linear', display: true, position: 'right', title: { display: true, text: 'Humidity (%)' }, grid: { drawOnChartArea: false } }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Run immediately, then poll every 5 seconds
+        updateDashboard();
+        setInterval(updateDashboard, 5000);
+    </script>
+</body>
+</html>
