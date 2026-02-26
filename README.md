@@ -40,3 +40,9 @@ CREATE TABLE IF NOT EXISTS mqtt_data (
     rssi INT,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+### 2. Backend Configuration
+1. Navigate to your Python backend directory.
+2. Install the required dependencies:
+   ```bash
+   pip install flask mysql-connector-python paho-mqtt
