@@ -40,9 +40,17 @@ CREATE TABLE IF NOT EXISTS mqtt_data (
     rssi INT,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
+```
 ### 2. Backend Configuration
 1. Navigate to your Python backend directory.
 2. Install the required dependencies:
    ```bash
    pip install flask mysql-connector-python paho-mqtt
+   ```
+### 3. Update app.py with your MySQL credentials if they differ from the default (tiputheadmin / tipu_1234).
+### 4. Run the Flask application:
+``` bash
+    python app.py
+```
+The dashboard will be available at http://localhost:5000.
+### 5. 
