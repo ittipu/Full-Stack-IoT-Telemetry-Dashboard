@@ -47,10 +47,28 @@ CREATE TABLE IF NOT EXISTS mqtt_data (
    ```bash
    pip install flask mysql-connector-python paho-mqtt
    ```
-### 3. Update app.py with your MySQL credentials if they differ from the default (tiputheadmin / tipu_1234).
+   
+### 3. Update app.py with your MySQL credentials 
+```python
+db_config = {
+    'host': 'localhost',
+    'user': 'tiputheadmin',          
+    'password': 'tipu_1234',  
+    'database': 'senseHub'
+}
+```
+
 ### 4. Run the Flask application:
 ``` bash
     python app.py
 ```
 The dashboard will be available at http://localhost:5000.
-### 5. 
+### 5. ESP32 Firmware Flashing
+1. Open `Build_a_Full_Stack_IoT_Dashboard.ino` in your Arduino IDE or PlatformIO.
+2. Update the WiFi configuration:
+   ```cpp
+   const char* ssid = "YOUR_WIFI_SSID"; 
+   const char* password = "YOUR_WIFI_PASSWORD";
+   ```
+3. Verify the MQTT broker settings (defaults to mqtt.iotbhai.io on port 1883).
+4. Compile and upload to your ESP32 board.
