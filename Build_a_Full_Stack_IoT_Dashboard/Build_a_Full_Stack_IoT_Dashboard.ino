@@ -15,10 +15,8 @@
 // ==========================================
 // 1. CONFIGURATION (Edit these)
 // ==========================================
-// const char* ssid = "SuffixIT 9A M5";
-// const char* password = "SuffWfi@321#";
-const char* ssid = "IoT";
-const char* password = "tipu1234@";
+const char* ssid = "YOUR_WIFI_SSID";
+const char* password = "YOUR_WIFI_PASSWORD";
 
 // MQTT Broker Settings (Using public HiveMQ for demo, change for production)
 const char* mqtt_server = "mqtt.iotbhai.io";
