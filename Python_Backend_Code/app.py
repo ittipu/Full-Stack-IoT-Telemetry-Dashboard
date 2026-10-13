@@ -8,8 +8,8 @@ app = Flask(__name__)
 # --- MySQL Configuration ---
 db_config = {
     'host': 'localhost',
-    'user': 'tiputheadmin',          
-    'password': 'tipu_1234',  
+    'user': 'YOUR_DB_USER',          
+    'password': 'YOUR_DB_PASSWORD',  
     'database': 'senseHub'
 }
 
